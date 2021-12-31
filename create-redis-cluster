@@ -1,0 +1,14 @@
+#!/bin/bash
+
+
+docker ps -qa | xargs docker rm -f
+for i in $(seq 1 6)
+do 
+    mkdir -p /tmp/redis/700$i
+    echo -e "port 0\ntls-port 700$i\ntls-cluster yes\ntls-auth-clients no\ntls-cert-file /tmp/redis/cert.pem\ntls-key-file /tmp/redis/key.pem\ntls-ca-cert-file /tmp/redis/cert.pem\ncluster-enabled yes\ncluster-config-file nodes.conf\ncluster-node-timeout 5000\nbind 127.0.0.$i\nrequirepass 123456" > /tmp/redis/700$i/redis.conf
+    docker run -d -v /Users/sahlic/tmp/redis-envoy:/tmp/redis -v /tmp/redis/700$i/redis.conf:/opt/redis/redis.conf -d --net=host --name myredis-$i redis /opt/redis/redis.conf
+done
+
+# redis-cli --tls --cert /tmp/redis/cert.pem --key /tmp/redis/key.pem --cacert /tmp/redis/cert.pem -a 123456  -h 127.0.0.1 -p 7001 --cluster create 127.0.0.1:7001 127.0.0.2:7002 127.0.0.3:7003 127.0.0.4:7004 127.0.0.5:7005 127.0.0.6:7006 --cluster-replicas 1
+
+# docker exec -it $(docker ps -q | head -n1) redis-cli --tls --insecure --cluster create 127.0.0.1:7001 127.0.0.2:7002 127.0.0.3:7003 127.0.0.4:7004 127.0.0.5:7005 127.0.0.6:7006 --cluster-replicas 1 -a 123456
